@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -15,7 +16,7 @@ var stdout = os.Stdout
 var stderr = os.Stderr
 
 const (
-	// https://gist.github.com/vratiu/9780109
+	// man console_codes
 	colorRed    = iota + 31 // 31
 	colorGreen              // 32
 	colorYellow             // 33
@@ -38,20 +39,24 @@ func run(args []string) error {
 	defer func() {
 		<-c
 	}()
+	var wg sync.WaitGroup
+	wg.Add(2)
+	defer wg.Wait()
 
 	args = append([]string{"test"}, args...)
 	r, w := io.Pipe()
 	defer w.Close()
 
 	cmd := exec.Command("go", args...)
-	cmd.Stderr = w
 	cmd.Stdout = w
+	cmd.Stderr = w
 	cmd.Env = os.Environ()
 
 	if err := cmd.Start(); err != nil {
 		log.Print(err)
 		return err
 	}
+
 	go func() {
 		defer func() {
 			c <- struct{}{}
