@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"syscall"
 )
 
@@ -39,9 +38,6 @@ func run(args []string) error {
 	defer func() {
 		<-c
 	}()
-	var wg sync.WaitGroup
-	wg.Add(2)
-	defer wg.Wait()
 
 	args = append([]string{"test"}, args...)
 	r, w := io.Pipe()
